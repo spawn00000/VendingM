@@ -38,7 +38,7 @@ namespace VendingM
             //two classes for objects - items from the vending machine and money
             //the interactions will succeed if items or money are available. if not, user is notified by messages
             //the use of 'ref' was just for debugging the program faster and to show the flow of operations easier in the lines below
-            //hope all cases where covered. The 3 text files worked OK, in any succession in the same session.
+            //hope all cases where covered. The 3 text files worked OK, in any succession in the same session. you can enter any number of commands like "p fileName.txt" in the same succession
 
 
             Console.WindowHeight = 60; //increase height of the console 
