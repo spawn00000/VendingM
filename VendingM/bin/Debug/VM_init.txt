@@ -1,0 +1,2 @@
+items	name	category	value	quantity, product1	chips	7	3, product2	soda	11	3, product3	energy bar	4	1,
+money	value	quantity, 1	100, 5	50, 10	50,

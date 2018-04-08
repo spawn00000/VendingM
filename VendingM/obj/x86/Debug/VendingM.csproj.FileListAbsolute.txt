@@ -1,0 +1,4 @@
+C:\Users\Marius\Dropbox\Laptop\CV & jobs\Aplicari\Charles sindrey - client server\cme - interview\VendingM\VendingM\bin\Debug\VendingM.exe
+C:\Users\Marius\Dropbox\Laptop\CV & jobs\Aplicari\Charles sindrey - client server\cme - interview\VendingM\VendingM\bin\Debug\VendingM.pdb
+C:\Users\Marius\Dropbox\Laptop\CV & jobs\Aplicari\Charles sindrey - client server\cme - interview\VendingM\VendingM\obj\x86\Debug\VendingM.exe
+C:\Users\Marius\Dropbox\Laptop\CV & jobs\Aplicari\Charles sindrey - client server\cme - interview\VendingM\VendingM\obj\x86\Debug\VendingM.pdb
