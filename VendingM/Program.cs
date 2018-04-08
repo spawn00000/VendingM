@@ -10,8 +10,7 @@ namespace VendingM
     {
         static void Main(string[] args)
         {
-
-            //Program p = new Program();
+            
 
             //task
             //A vending machine sells items for various prices and can give change. At the start of the day it is loaded with a certain number of coins of various denominations e.g. 100 x 1p, 50 x 5p, 50 x 10p etc. 
@@ -19,6 +18,13 @@ namespace VendingM
             //Write code that models the vending machine and calculates the change to be given when an item is purchased (e.g. 2 x 20p used to purchase an item costing 25p might return 1 x 10p and 1 x 5p).
             
             //the use of 'ref' was just for debugging the program faster and to show the flow of operations easier in the lines below
+
+
+            Console.WindowHeight = 60; //increase height of the console 
+            Console.WindowWidth= 140; //increase height of the console 
+            Program p = new Program();
+            Console.WriteLine("Welcome to Vending Machine 1.0!");
+            Console.WriteLine();
 
             //VM = vending machine
             vendingMachine VM = new vendingMachine();
@@ -29,36 +35,119 @@ namespace VendingM
 
             //input
             VM.fill_VM(ref VM);
+            //display VM initial items
+            Console.Write("VM items filled today: ");
+            p.display(VM.items);
+            //display VM initial money
+            Console.Write("VM money filled today: ");
+            p.display(VM.money);
+            Console.WriteLine();
+
+            Console.WriteLine("Write 'p [fileName]' to purchase items. e.g. p UI_interact.txt");
+            Console.WriteLine("Write 'q' to leave VM");
+            Console.WriteLine();
+
 
             //cicle interactions
+            int counter = 0;
 
-            //interaction with VM
-            userInteraction UI = new userInteraction();
-            //init UI
-            UI.UI_itemsRequested = new List<item>();
-            UI.UI_moneyUsed = new List<money>();
-            UI.UI_changeGiven = new List<money>();
-            //other inits?
+            while (true)
+            {
+                string userConsole = Console.ReadLine();
+                if (userConsole.Equals("q"))
+                {
+                    break;
+                }
+                else if (userConsole.Contains('p'))
+                {
+                    string fileName = "UI_interact.txt";
+                    try
+                    {
+                        fileName = userConsole.Split(' ')[1];
+                    }
+                    catch
+                    {
+                        Console.WriteLine("We do not have that product. Input error");
+                        break;
+                    }
 
-            UI.interact(ref UI);
+                    counter += 1;
+                    Console.WriteLine("Interaction" + counter);
 
-            
+                    //interaction with VM
+                    userInteraction UI = new userInteraction();
+                    //init UI
+                    UI.UI_itemsRequested = new List<item>();
+                    UI.UI_moneyUsed = new List<money>();
+                    UI.UI_changeGiven = new List<money>();
+                    //other inits?
 
-            //calculate change
-            //(update vending machine) - items and money
-            //and give items and change! (update interaction)
-            List<money> change= VM.giveChange(ref VM, ref UI);
+                    UI.interact(ref UI, fileName);
+                    //display money used for interaction
+                    Console.Write("Money used: ");
+                    p.display(UI.UI_moneyUsed);
 
+                    //calculate change
+                    //(update vending machine) - items and money
+                    //and give items and change! (update interaction)
+                    VM.giveChange(ref VM, ref UI);
 
-            
+                    //display change
+                    Console.Write("Change received: ");
+                    p.display(UI.UI_changeGiven);
 
-            //ending interactions? or continue
+                    //display VM money
+                    Console.Write("VM money after interaction: ");
+                    p.display(VM.money);
 
+                    //display VM items
+                    Console.Write("VM items after interaction: ");
+                    p.display(VM.items);
+                }
+                else
+                {
+                    Console.WriteLine("Please don't hit the vending machine");
+                }
+                //ending interactions? or continue
+            }
 
             //keep console open.
             Console.WriteLine();
             Console.WriteLine("Press any key to exit. Thank you for using our vending machine");
             Console.ReadKey();
+        }
+
+
+        public void display(List<money> e)
+        {
+            for (int i = 0; i < e.Count; i++)
+            {
+                Console.Write(e[i].quantity + "x" + e[i].value + "p");
+                if (i == e.Count - 1)
+                {
+                    Console.Write("\n");
+                }
+                else
+                {
+                    Console.Write(", ");
+                }
+            }
+        }
+
+        public void display(List<item> e)
+        {
+            for (int i = 0; i < e.Count; i++)
+            {
+                Console.Write(e[i].name +" "+e[i].quantity + "x" + e[i].value + "p");
+                if (i == e.Count - 1)
+                {
+                    Console.Write("\n");
+                }
+                else
+                {
+                    Console.Write(", ");
+                }
+            }
         }
  
     }
@@ -89,9 +178,34 @@ namespace VendingM
         }
 
         
-        public List<money> giveChange(ref vendingMachine VM, ref userInteraction UI)
+        public void giveChange(ref vendingMachine VM, ref userInteraction UI)
         {
             List<money> result = new List<money>();
+            
+            //see if items are available in stock
+            //this should not happen! (you should not ask for an item that is not in VM
+
+            bool stock=true;
+            for (int i = 0; i < UI.UI_itemsRequested.Count; i++)
+            {
+                
+                for (int j = 0; j < VM.items.Count; j++)
+                {
+                    if (UI.UI_itemsRequested[i].id.Equals(VM.items[j].id))
+                    {
+                        if (VM.items[j].quantity <= 0)
+                        {
+                            stock = false;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (!stock)
+            {
+                //todo message for user
+                return;
+            }
 
             //calculate the cost pf items
             int cost = 0;
@@ -148,30 +262,33 @@ namespace VendingM
                     }
                     change -= max;
 
-                    //update VM money
-                    VM.money[indexMax].quantity -= 1;
+                    if (max > 0)
+                    { //if we can add more to the change
 
-                    //update list UI.changeGiven
-                    money m = new money();
-                    m.value=max;
-                    m.quantity=1;
+                        //update VM money
+                        VM.money[indexMax].quantity -= 1;
 
-                    bool alreadyExists = false;
-                    for (int i = 0; i < UI.UI_changeGiven.Count; i++)
-                    {
-                        if (m.value.Equals(UI.UI_changeGiven[i].value))
+                        //update list UI.changeGiven
+                        money m = new money();
+                        m.value = max;
+                        m.quantity = 1;
+
+                        bool alreadyExists = false;
+                        for (int i = 0; i < UI.UI_changeGiven.Count; i++)
                         {
-                            alreadyExists = true;
-                            UI.UI_changeGiven[i].quantity += m.quantity;
-                            break;
+                            if (m.value.Equals(UI.UI_changeGiven[i].value))
+                            {
+                                alreadyExists = true;
+                                UI.UI_changeGiven[i].quantity += m.quantity;
+                                break;
+                            }
+                        }
+
+                        if (!alreadyExists)
+                        {
+                            UI.UI_changeGiven.Add(m);
                         }
                     }
-
-                    if (!alreadyExists)
-                    {
-                        UI.UI_changeGiven.Add(m);
-                    }
-
 
                     //while loop condition
                     if ((max == 0) || (change ==0))
@@ -226,7 +343,7 @@ namespace VendingM
                 }
                 else
                 {
-                    //no change!!!
+                    //no change to give!!!
 
                     //update VM money using UI.changeGiven
                     //empty UI.changeGiven
@@ -247,15 +364,8 @@ namespace VendingM
                     //create message for user -TODO
                 }
 
-
-
             }
 
-
-
-
-
-            return result;
         }
 
         public void fill_VM(ref vendingMachine VM)
@@ -338,11 +448,11 @@ namespace VendingM
         public List<item> UI_itemsGiven { get; set; } //in case the machine runs out of change - gives less items if no change available (even 0 items)  (TODO - discussion)
         public List<money> UI_changeGiven { get; set; }
 
-        public void interact(ref userInteraction UI)
+        public void interact(ref userInteraction UI, string fileName)
         {
             //input from a text file for now
 
-            string fileName = "UI_interact.txt";
+          //string fileName = "UI_interact.txt";
             string[] separators = new string[1];
             separators[0] = ", ";
 
@@ -364,6 +474,7 @@ namespace VendingM
 
                     item z = new item();
                     z.id = Convert.ToInt32(id);
+                    z.quantity = 1; // he can take only one fron an id (if he wants two of the same type, the user makes another interaction)
 
                     //we do not fill properties from vending machine! because the user may not know all of them (we just fill property ID - simulating the press of a button)
 
@@ -402,6 +513,8 @@ namespace VendingM
     public class money : entity
     {
         //public string type { get; set; } // banknote or coin - if we decide to add type --> the value for banknotes should be multiplied by 100, it is safer to have only one currency - e.g cent or penny (instead of having both cent and dollar)
+
+        
     }
 
     public class item : entity
