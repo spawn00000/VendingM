@@ -1,0 +1,2 @@
+items:	id, 4
+money:	value	quantity, 10	1, 5	1
