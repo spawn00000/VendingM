@@ -37,18 +37,20 @@ namespace VendingM
             //init UI
             UI.UI_itemsRequested = new List<item>();
             UI.UI_moneyUsed = new List<money>();
+            UI.UI_changeGiven = new List<money>();
             //other inits?
 
             UI.interact(ref UI);
 
+            
+
             //calculate change
+            //(update vending machine) - items and money
+            //and give items and change! (update interaction)
             List<money> change= VM.giveChange(ref VM, ref UI);
 
-            //update vending machine 
-            //and give items and change! (update interaction)
 
-            //output results
-
+            
 
             //ending interactions? or continue
 
@@ -86,6 +88,7 @@ namespace VendingM
             return price;
         }
 
+        
         public List<money> giveChange(ref vendingMachine VM, ref userInteraction UI)
         {
             List<money> result = new List<money>();
@@ -108,11 +111,148 @@ namespace VendingM
                 }
             }
 
-            //analyse what money is in VM
+            //calculate the change
+            int moneyUsed = 0;
+            for (int i = 0; i < UI.UI_moneyUsed.Count; i++)
+            {
+                moneyUsed += UI.UI_moneyUsed[i].value * UI.UI_moneyUsed[i].quantity;
+            }
+            int change = moneyUsed - cost;
+
+            if (change < 0)
+            {
+                //more money for the products please
+            }
+            else if (change == 0)
+            {
+                //end transaction with a message
+            }
+            else
+            {
+                //give Change
+                //give from higher to lower                
+
+                bool changePossible = true;
+                while (changePossible)
+                {
+                    int max = 0;
+                    int indexMax=0;
+                    for (int i = 0; i < VM.money.Count; i++)
+                    {
+                        //find max - but smaller than change
+                        if ((VM.money[i].value > max) && (VM.money[i].quantity > 0) && (VM.money[i].value <= change))
+                        {
+                            max = VM.money[i].value; 
+                            indexMax=i;
+                        }
+                    }
+                    change -= max;
+
+                    //update VM money
+                    VM.money[indexMax].quantity -= 1;
+
+                    //update list UI.changeGiven
+                    money m = new money();
+                    m.value=max;
+                    m.quantity=1;
+
+                    bool alreadyExists = false;
+                    for (int i = 0; i < UI.UI_changeGiven.Count; i++)
+                    {
+                        if (m.value.Equals(UI.UI_changeGiven[i].value))
+                        {
+                            alreadyExists = true;
+                            UI.UI_changeGiven[i].quantity += m.quantity;
+                            break;
+                        }
+                    }
+
+                    if (!alreadyExists)
+                    {
+                        UI.UI_changeGiven.Add(m);
+                    }
+
+
+                    //while loop condition
+                    if ((max == 0) || (change ==0))
+                    {
+                        //either we completed all the change or we cannot give change so we abort
+                        changePossible = false;
+                    }
+                }
+
+                if (change == 0)
+                {
+                    //mission complete 
+                    //update items in VM  -TODO
+                    //update givenitems in UI -TODO
+
+                    for (int i = 0; i < UI.UI_itemsRequested.Count; i++)
+                    {
+                        for (int j = 0; j < VM.items.Count; j++)
+                        {
+                            if (UI.UI_itemsRequested[i].id.Equals(VM.items[j].id))
+                            {
+                                VM.items[j].quantity -= UI.UI_itemsRequested[i].quantity;
+                            }
+                        }
+                    }
+
+                    //update money in VM (with money given by the user) - only if the transaction is finalized (the change could be given) - we do not simulate the money going in VM and exiting VM if the change cannot be given
+
+                    for (int j = 0; j < UI.UI_moneyUsed.Count; j++)
+                    {
+
+                        money m = UI.UI_moneyUsed[j];
+
+                        bool alreadyExists = false;
+                        for (int i = 0; i < VM.money.Count; i++)
+                        {
+                            if (m.value.Equals(VM.money[i].value))
+                            {
+                                alreadyExists = true;
+                                VM.money[i].quantity += m.quantity;
+                                break;
+                            }
+                        }
+
+                        if (!alreadyExists)
+                        {
+                            UI.UI_changeGiven.Add(m);
+                        }
+                    }
+
+ 
+                }
+                else
+                {
+                    //no change!!!
+
+                    //update VM money using UI.changeGiven
+                    //empty UI.changeGiven
+
+                    for (int i = 0; i < UI.UI_changeGiven.Count; i++)
+                    {
+                        for (int j = 0; j < VM.money.Count; j++)
+                        {
+                            if (UI.UI_changeGiven[i].value.Equals(VM.money[j].value))
+                            {
+                                VM.money[j].quantity += UI.UI_changeGiven[i].quantity;
+                            }
+                        }
+                    }
+
+                    UI.UI_changeGiven.Clear();
+
+                    //create message for user -TODO
+                }
 
 
 
-            List<money> moneyUsed = UI.UI_moneyUsed;
+            }
+
+
+
 
 
             return result;
