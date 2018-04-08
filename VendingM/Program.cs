@@ -18,20 +18,31 @@ namespace VendingM
             //When an item is requested a certain number of coins are provided. 
             //Write code that models the vending machine and calculates the change to be given when an item is purchased (e.g. 2 x 20p used to purchase an item costing 25p might return 1 x 10p and 1 x 5p).
             
+            //the use of 'ref' was just for debugging the program faster and to show the flow of operations easier in the lines below
+
             //VM = vending machine
             vendingMachine VM = new vendingMachine();
+            //init VM
+            VM.items = new List<item>();
+            VM.money = new List<money>();
+            //other inits?
 
             //input
-            VM.fill_VM();
+            VM.fill_VM(ref VM);
 
             //cicle interactions
 
             //interaction with VM
             userInteraction UI = new userInteraction();
-            UI.interact();
+            //init UI
+            UI.UI_itemsRequested = new List<item>();
+            UI.UI_moneyUsed = new List<money>();
+            //other inits?
+
+            UI.interact(ref UI);
 
             //calculate change
-            List<money> change= VM.giveChange();
+            List<money> change= VM.giveChange(ref VM, ref UI);
 
             //update vending machine 
             //and give items and change! (update interaction)
@@ -47,17 +58,13 @@ namespace VendingM
             Console.WriteLine("Press any key to exit. Thank you for using our vending machine");
             Console.ReadKey();
         }
-
-        
-
-
-        
+ 
     }
 
     public class vendingMachine : entity
     {
         public List<item> items { get; set; }
-        public List<money> currency { get; set; }
+        public List<money> money { get; set; }
 
         //for any timeframe desired - for now we leave it as an all-time evidence
         public int VM_itemsSoldCount { get; set; }
@@ -65,18 +72,60 @@ namespace VendingM
         public List<item> VM_itemsSold { get; set; }
         public List<money> VM_moneyGained { get; set; }
 
-        public List<money> giveChange()
+        public int getPriceOf(int itemID, vendingMachine VM)
+        {
+            int price = -1;
+            for (int i = 0; i < VM.items.Count; i++)
+            {
+                if (itemID.Equals(VM.items[i].id))
+                {
+                    price = VM.items[i].value;
+                    break;
+                }
+            }
+            return price;
+        }
+
+        public List<money> giveChange(ref vendingMachine VM, ref userInteraction UI)
         {
             List<money> result = new List<money>();
+
+            //calculate the cost pf items
+            int cost = 0;
+            for (int i = 0; i < UI.UI_itemsRequested.Count; i++)
+            {
+
+                int price = getPriceOf(UI.UI_itemsRequested[i].id, VM);
+                if (price >= 0)
+                    cost += price;
+                else
+                {
+                    //treat error TODO
+                    //error in file UI - ID not found -error in file, or the item with that ID is no longer in stock
+
+                    //we have to remove the item form the list of items of the interaction
+                    //compose message for user
+                }
+            }
+
+            //analyse what money is in VM
+
+
+
+            List<money> moneyUsed = UI.UI_moneyUsed;
+
+
             return result;
         }
 
-        public void fill_VM()
+        public void fill_VM(ref vendingMachine VM)
         {
             //input from a text file (an XML would be better)
             //but for now txt is fine, because the user will input interactions in the same format (no visual elements, e.g. buttons)
 
-            string fileName = "VM_init.txt";
+            
+
+            string fileName = "VM_fill.txt";
             string[] separators = new string[1];
             separators[0] = ", ";
 
@@ -86,17 +135,50 @@ namespace VendingM
                 //{
 
                 string[] el = sr.ReadLine().Split(separators, StringSplitOptions.None); // StringSplitOptions.None will leave the indexes ok if some data is missing from the file
-                //el[1] = title of item fields
-                //el[2] = item1
-                //el[3] = item2, etc
+                //el[0] = title of item fields: id  name	category	value	quantity
+                //el[1] = item1
+                //el[2] = item2, etc
 
-                string[] name = el[0].Split('\t');
+                for (int i = 1; i < el.Length; i++)
+                {
+                    string[] elements = el[i].Split('\t');
+
+                    string id = elements[0];
+                    string name = elements[1];
+                    string category = elements[2];
+                    string value = elements[3];
+                    string quantity = elements[4];
+
+                    item z = new item();
+                    z.id = Convert.ToInt32(id);
+                    z.name = name;
+                    z.category = category;
+                    z.value = Convert.ToInt32(value);
+                    z.quantity = Convert.ToInt32(quantity);
+
+                    VM.items.Add(z);
+                }
+                
 
                 el = sr.ReadLine().Split(separators, StringSplitOptions.None); // StringSplitOptions.None will leave the indexes ok if some data is missing from the file
-                //el[1] = title of money fields
-                //el[2] = money1
-                //el[3] = money2, etc                   
+                //el[0] = title of money fields: value	quantity
+                //el[1] = money1
+                //el[2] = money2, etc                   
 
+
+                for (int i = 1; i < el.Length; i++)
+                {
+                    string[] elements = el[i].Split('\t');
+
+                    string value = elements[0];
+                    string quantity = elements[1];
+
+                    money z = new money();
+                    z.value = Convert.ToInt32(value);
+                    z.quantity = Convert.ToInt32(quantity);
+
+                    VM.money.Add(z);
+                }
 
 
                 //}
@@ -104,19 +186,76 @@ namespace VendingM
             }
 
         }
+
     }
 
     public class userInteraction : interaction
     {
         public List<item> UI_itemsRequested { get; set; }
-        public List<item> UI_itemsGiven { get; set; } //in case the machine runs out of change - gives less items if no change available (even 0 items)  (TODO - discussion)
+        public List<money> UI_moneyUsed { get; set; }
 
         public List<money> UI_moneyRequested { get; set; }
-        public List<money> UI_moneyUsed { get; set; }
+        public List<item> UI_itemsGiven { get; set; } //in case the machine runs out of change - gives less items if no change available (even 0 items)  (TODO - discussion)
         public List<money> UI_changeGiven { get; set; }
 
-        public void interact()
+        public void interact(ref userInteraction UI)
         {
+            //input from a text file for now
+
+            string fileName = "UI_interact.txt";
+            string[] separators = new string[1];
+            separators[0] = ", ";
+
+            using (StreamReader sr = new StreamReader(fileName))
+            {
+                //while (!sr.EndOfStream)
+                //{
+
+                string[] el = sr.ReadLine().Split(separators, StringSplitOptions.None); // StringSplitOptions.None will leave the indexes ok if some data is missing from the file
+                //el[0] = title of item fields: id
+                //el[1] = item1
+                //el[2] = item2, etc
+
+                for (int i = 1; i < el.Length; i++)
+                {
+                    string[] elements = el[i].Split('\t');
+
+                    string id = elements[0];
+
+                    item z = new item();
+                    z.id = Convert.ToInt32(id);
+
+                    //we do not fill properties from vending machine! because the user may not know all of them (we just fill property ID - simulating the press of a button)
+
+                    UI.UI_itemsRequested.Add(z);
+                }
+
+
+                el = sr.ReadLine().Split(separators, StringSplitOptions.None); // StringSplitOptions.None will leave the indexes ok if some data is missing from the file
+                //el[0] = title of money fields: value	quantity
+                //el[1] = money1
+                //el[2] = money2, etc                   
+
+
+                for (int i = 1; i < el.Length; i++)
+                {
+                    string[] elements = el[i].Split('\t');
+
+                    string value = elements[0];
+                    string quantity = elements[1];
+
+                    money z = new money();
+                    z.value = Convert.ToInt32(value);
+                    z.quantity = Convert.ToInt32(quantity);
+
+                    UI.UI_moneyUsed.Add(z);
+                }
+
+
+                //}
+                sr.Close();
+
+            }
         }
     }
 
@@ -127,6 +266,7 @@ namespace VendingM
 
     public class item : entity
     {
+        public int id { get; set; } //product id
         public string name { get; set; } //product name, label
         public string category { get; set; } //chips, soda, energy bars, etc
     }
